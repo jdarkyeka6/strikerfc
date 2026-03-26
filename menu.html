@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Striker FC</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--cyan:#00F2FF;--purple:#7000FF;--black:#0A0B10;--black2:#0F1018;--black3:#14151F;--white:#F0F0F0;--white2:#A0A8B8;--fh:'Oswald',sans-serif;--fb:'Inter',sans-serif}
+body{background:var(--black);color:var(--white);font-family:var(--fb);min-height:100vh;overflow-x:hidden;cursor:none}
+
+/* Custom cursor */
+#cur{position:fixed;width:10px;height:10px;background:var(--cyan);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference}
+#cur-ring{position:fixed;width:28px;height:28px;border:1px solid rgba(0,242,255,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .2s,height .2s}
+
+/* Scanline */
+#scan{position:fixed;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.08;z-index:100;pointer-events:none;animation:scan 8s linear infinite}
+@keyframes scan{from{top:-2px}to{top:100vh}}
+
+/* ── BACKGROUND PITCH ── */
+#bg-pitch{position:fixed;inset:0;z-index:0;opacity:.06}
+#bg-pitch svg{width:100%;height:100%}
+
+/* ── LAYOUT ── */
+#app{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOP NAV ── */
+#topnav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:64px;
+  background:rgba(10,11,16,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,242,255,.1);
+  position:sticky;top:0;z-index:50;
+}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-wordmark{font-family:var(--fh);font-size:20px;font-style:italic;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--white)}
+.nav-wordmark span{color:var(--cyan)}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{
+  font-family:var(--fh);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:8px 20px;cursor:none;color:var(--white2);background:none;border:none;
+  border-bottom:2px solid transparent;transition:all .2s;
+}
+.nav-tab:hover{color:var(--white)}
+.nav-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-bolts{display:flex;align-items:center;gap:5px;font-family:var(--fh);font-size:16px;font-weight:700;color:var(--cyan)}
+.nav-bolt-lbl{font-size:10px;color:var(--white2);letter-spacing:.1em;text-transform:uppercase}
+.nav-club-btn{
+  font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--white2);background:none;border:1px solid rgba(255,255,255,.12);
+  padding:6px 14px;cursor:none;transition:all .2s;text-decoration:none;
+}
+.nav-club-btn:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* ── VIEWS ── */
+.view{display:none;animation:view-in .3s ease both}
+.view.active{display:block}
+@keyframes view-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── HOME VIEW ── */
+#view-home{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - 64px);padding:40px 24px;gap:0;
+}
+.home-badge{
+  width:90px;height:90px;margin-bottom:28px;
+  animation:badge-float 3s ease-in-out infinite;
+}
+@keyframes badge-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+.home-title{
+  font-family:var(--fh);font-size:clamp(56px,10vw,110px);font-weight:700;
+  font-style:italic;letter-spacing:.06em;text-transform:uppercase;
+  line-height:.9;text-align:center;margin-bottom:8px;
+}
+.home-title .line2{color:var(--cyan);display:block}
+.home-sub{
+  font-family:var(--fh);font-size:13px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--white2);margin-bottom:48px;
+}
+
+.home-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:60px}
+.btn-primary{
+  font-family:var(--fh);font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--black);background:var(--cyan);border:none;padding:16px 48px;
+  cursor:none;transition:all .2s;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+}
+.btn-primary:hover{background:#fff;box-shadow:0 0 30px rgba(0,242,255,.4)}
+.btn-secondary{
+  font-family:var(--fh);font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--white2);background:none;border:1px solid rgba(255,255,255,.15);padding:14px 32px;
+  cursor:none;transition:all .2s;
+}
+.btn-secondary:hover{color:var(--white);border-color:rgba(255,255,255,.4)}
+
+/* Quick stats strip */
+.home-stats{
+  display:flex;gap:40px;border-top:1px solid rgba(0,242,255,.1);
+  padding-top:28px;
+}
+.hstat{text-align:center}
+.hstat-val{font-family:var(--fh);font-size:32px;font-weight:700;color:var(--cyan)}
+.hstat-lbl{font-size:11px;color:var(--white2);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+
+/* ── FORMATION VIEW ── */
+#view-formation{padding:40px;max-width:1100px;margin:0 auto}
+.view-header{margin-bottom:32px}
+.view-label{font-family:var(--fh);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.view-label::before{content:'';display:block;width:18px;height:1px;background:var(--cyan)}
+.view-title{font-family:var(--fh);font-size:clamp(28px,4vw,48px);font-weight:700;font-style:italic;text-transform:uppercase}
+.view-title span{color:var(--cyan)}
+
+.form-layout{display:grid;grid-template-columns:200px 1fr 260px;gap:24px;align-items:start}
+
+/* Formation selector */
+.form-picker{display:flex;flex-direction:column;gap:6px}
+.form-option{
+  font-family:var(--fh);font-size:13px;font-weight:600;letter-spacing:.1em;
+  padding:12px 16px;cursor:none;background:var(--black3);
+  border:1px solid rgba(0,242,255,.1);color:var(--white2);transition:all .2s;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.form-option:hover{color:var(--white);border-color:rgba(0,242,255,.3)}
+.form-option.active{background:rgba(0,242,255,.1);color:var(--cyan);border-color:var(--cyan)}
+.form-badge{font-size:9px;letter-spacing:.1em;color:var(--white2);opacity:.6}
+
+/* Pitch diagram */
+.pitch-diagram{
+  background:var(--black3);border:1px solid rgba(0,242,255,.1);
+  aspect-ratio:0.68;position:relative;overflow:hidden;
+}
+.pd-grass{position:absolute;inset:0;background:#1a4a1a}
+.pd-stripe{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.025)}
+.pd-line{position:absolute;background:rgba(255,255,255,.25)}
+.pd-circle{position:absolute;border:1px solid rgba(255,255,255,.2);border-radius:50%}
+.pd-player{
+  position:absolute;width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:9px;font-weight:700;letter-spacing:.04em;
+  transform:translate(-50%,-50%);cursor:none;transition:all .3s;
+  border:2px solid rgba(255,255,255,.4);
+}
+.pd-player.blue{background:rgba(0,163,255,.8);border-color:#00A3FF;color:#fff}
+.pd-player.blue.gk{background:rgba(0,204,68,.8);border-color:#00CC44}
+.pd-player:hover{transform:translate(-50%,-50%) scale(1.15)}
+
+/* Formation stats panel */
+.form-stats{background:var(--black3);border:1px solid rgba(0,242,255,.1);border-top:2px solid var(--cyan);padding:20px}
+.form-stats-title{font-family:var(--fh);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--white2);margin-bottom:16px}
+.stat-bar-row{margin-bottom:12px}
+.stat-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--white2);margin-bottom:4px}
+.stat-bar-label span:last-child{color:var(--white);font-weight:500}
+.stat-bar-track{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.stat-bar-fill{height:100%;background:var(--cyan);border-radius:2px;transition:width .4s ease}
+
+.form-kick-btn{
+  width:100%;font-family:var(--fh);font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--black);background:var(--cyan);border:none;padding:14px;
+  cursor:none;transition:all .2s;margin-top:20px;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+}
+.form-kick-btn:hover{background:#fff;box-shadow:0 0 20px rgba(0,242,255,.4)}
+
+/* ── SETTINGS VIEW ── */
+#view-settings{padding:40px;max-width:700px;margin:0 auto}
+.settings-group{margin-bottom:32px}
+.settings-group-title{font-family:var(--fh);font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--cyan);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(0,242,255,.1)}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;color:var(--white)}
+.setting-sub{font-size:11px;color:var(--white2);margin-top:2px}
+.setting-control{display:flex;gap:4px}
+.seg-btn{
+  font-family:var(--fh);font-size:10px;font-weight:600;letter-spacing:.08em;
+  padding:6px 14px;cursor:none;background:var(--black2);
+  border:1px solid rgba(0,242,255,.12);color:var(--white2);transition:all .18s;
+}
+.seg-btn.active{background:rgba(0,242,255,.12);color:var(--cyan);border-color:var(--cyan)}
+.seg-btn:hover{color:var(--white)}
+.toggle-wrap{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--white2)}
+.toggle-track{position:relative;width:36px;height:20px;background:rgba(255,255,255,.1);border-radius:10px;cursor:none;transition:background .2s}
+.toggle-track.on{background:var(--cyan)}
+.toggle-knob{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle-track.on .toggle-knob{transform:translateX(16px)}
+</style>
+</head>
+<body>
+<div id="cur"></div><div id="cur-ring"></div><div id="scan"></div>
+
+<!-- Pitch background -->
+<div id="bg-pitch">
+  <svg viewBox="0 0 100 65" preserveAspectRatio="xMidYMid slice">
+    <rect width="100" height="65" fill="#1a4a1a"/>
+    <rect x="0" y="0" width="10" height="65" fill="#1e5c1e"/>
+    <rect x="20" y="0" width="10" height="65" fill="#1e5c1e"/>
+    <rect x="40" y="0" width="10" height="65" fill="#1e5c1e"/>
+    <rect x="60" y="0" width="10" height="65" fill="#1e5c1e"/>
+    <rect x="80" y="0" width="10" height="65" fill="#1e5c1e"/>
+    <rect x="0" y="0" width="100" height="65" fill="none" stroke="white" stroke-width="0.3" opacity="0.4"/>
+    <line x1="50" y1="0" x2="50" y2="65" stroke="white" stroke-width="0.3" opacity="0.4"/>
+    <circle cx="50" cy="32.5" r="9" fill="none" stroke="white" stroke-width="0.3" opacity="0.4"/>
+    <rect x="0" y="22.5" width="14" height="20" fill="none" stroke="white" stroke-width="0.3" opacity="0.4"/>
+    <rect x="86" y="22.5" width="14" height="20" fill="none" stroke="white" stroke-width="0.3" opacity="0.4"/>
+  </svg>
+</div>
+
+<div id="app">
+  <!-- TOP NAV -->
+  <nav id="topnav">
+    <a class="nav-logo" href="#">
+      <svg width="22" height="26" viewBox="0 0 28 32" fill="none"><path d="M14 2L26 12L16 14L22 24L6 14L14 12L4 22L14 2Z" fill="#00F2FF"/></svg>
+      <span class="nav-wordmark">Striker <span>FC</span></span>
+    </a>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showView('home')">Home</button>
+      <button class="nav-tab" onclick="showView('formation')">Formation</button>
+      <button class="nav-tab" onclick="showView('settings')">Settings</button>
+    </div>
+    <div class="nav-right">
+      <div class="nav-bolts">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M8 1L2 8H7L6 13L12 6H7L8 1Z" fill="#00F2FF"/></svg>
+        <span id="nav-bolts">0</span>
+        <span class="nav-bolt-lbl">Bolts</span>
+      </div>
+      <a href="club.html" class="nav-club-btn">← Club</a>
+    </div>
+  </nav>
+
+  <!-- ── HOME ── -->
+  <div id="view-home" class="view active">
+    <svg class="home-badge" viewBox="0 0 100 100" fill="none">
+      <path d="M50 5L85 25V65L50 95L15 65V25L50 5Z" stroke="#00F2FF" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+      <path d="M50 15L78 31V63L50 79L22 63V31L50 15Z" fill="rgba(0,242,255,0.06)" stroke="#00F2FF" stroke-width="0.8"/>
+      <path d="M30 50L44 64L72 36" stroke="#00F2FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1 class="home-title">
+      Striker<span class="line2">FC</span>
+    </h1>
+    <div class="home-sub">Season 2026 · 3 Minute Matches</div>
+    <div class="home-actions">
+      <button class="btn-primary" onclick="showView('formation')">▶ Kick Off</button>
+      <button class="btn-secondary" onclick="showView('settings')">Settings</button>
+      <a href="league.html" class="btn-secondary" style="display:inline-flex;align-items:center;text-decoration:none">League Mode</a>
+    </div>
+    <div class="home-stats">
+      <div class="hstat"><div class="hstat-val" id="hs-played">0</div><div class="hstat-lbl">Played</div></div>
+      <div class="hstat"><div class="hstat-val" id="hs-wins">0</div><div class="hstat-lbl">Wins</div></div>
+      <div class="hstat"><div class="hstat-val" id="hs-goals">0</div><div class="hstat-lbl">Goals</div></div>
+      <div class="hstat"><div class="hstat-val" id="hs-bolts">0</div><div class="hstat-lbl">Bolts</div></div>
+    </div>
+  </div>
+
+  <!-- ── FORMATION ── -->
+  <div id="view-formation" class="view">
+    <div class="view-header">
+      <div class="view-label">Pre-Match</div>
+      <h2 class="view-title">Pick Your <span>Formation</span></h2>
+    </div>
+    <div class="form-layout">
+
+      <!-- Picker -->
+      <div class="form-picker" id="form-picker">
+        <button class="form-option active" data-form="4-3-3" onclick="selectFormation('4-3-3',this)">
+          <span>4-3-3</span><span class="form-badge">ATTACK</span>
+        </button>
+        <button class="form-option" data-form="4-4-2" onclick="selectFormation('4-4-2',this)">
+          <span>4-4-2</span><span class="form-badge">CLASSIC</span>
+        </button>
+        <button class="form-option" data-form="4-2-3-1" onclick="selectFormation('4-2-3-1',this)">
+          <span>4-2-3-1</span><span class="form-badge">CONTROL</span>
+        </button>
+        <button class="form-option" data-form="3-5-2" onclick="selectFormation('3-5-2',this)">
+          <span>3-5-2</span><span class="form-badge">WING PLAY</span>
+        </button>
+        <button class="form-option" data-form="5-3-2" onclick="selectFormation('5-3-2',this)">
+          <span>5-3-2</span><span class="form-badge">DEFEND</span>
+        </button>
+        <button class="form-option" data-form="4-1-4-1" onclick="selectFormation('4-1-4-1',this)">
+          <span>4-1-4-1</span><span class="form-badge">PRESS</span>
+        </button>
+      </div>
+
+      <!-- Pitch diagram -->
+      <div class="pitch-diagram" id="pitch-diagram">
+        <div class="pd-grass"></div>
+      </div>
+
+      <!-- Stats + kick off -->
+      <div class="form-stats">
+        <div class="form-stats-title">Formation Profile</div>
+        <div class="stat-bar-row">
+          <div class="stat-bar-label"><span>Attack</span><span id="fs-att">70</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" id="fb-att" style="width:70%"></div></div>
+        </div>
+        <div class="stat-bar-row">
+          <div class="stat-bar-label"><span>Midfield</span><span id="fs-mid">70</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" id="fb-mid" style="width:70%"></div></div>
+        </div>
+        <div class="stat-bar-row">
+          <div class="stat-bar-label"><span>Defence</span><span id="fs-def">70</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" id="fb-def" style="width:70%"></div></div>
+        </div>
+        <div class="stat-bar-row">
+          <div class="stat-bar-label"><span>Width</span><span id="fs-wid">70</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" id="fb-wid" style="width:70%"></div></div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+          <div class="form-stats-title">Difficulty</div>
+          <div class="setting-control" style="gap:4px">
+            <button class="seg-btn" id="diff-easy"   onclick="setDiff('easy')">Easy</button>
+            <button class="seg-btn active" id="diff-med" onclick="setDiff('medium')">Medium</button>
+            <button class="seg-btn" id="diff-hard"   onclick="setDiff('hard')">Hard</button>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+          <div class="form-stats-title">Match Length</div>
+          <div class="setting-control" style="gap:4px">
+            <button class="seg-btn" id="len-3" onclick="setLen(180)">3 min</button>
+            <button class="seg-btn active" id="len-5" onclick="setLen(300)">5 min</button>
+            <button class="seg-btn" id="len-10" onclick="setLen(600)">10 min</button>
+          </div>
+        </div>
+        <button class="form-kick-btn" onclick="kickOff()">▶ Kick Off</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div id="view-settings" class="view">
+    <div class="view-header">
+      <div class="view-label">Options</div>
+      <h2 class="view-title">Game <span>Settings</span></h2>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Audio</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Sound Effects</div><div class="setting-sub">Kicks, tackles, whistles</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle-track on" id="tog-sfx" onclick="toggleSetting('sfx',this)"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Crowd Noise</div><div class="setting-sub">Ambient stadium atmosphere</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle-track on" id="tog-crowd" onclick="toggleSetting('crowd',this)"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Gameplay</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Weather</div><div class="setting-sub">Affects ball physics and visibility</div></div>
+        <div class="setting-control">
+          <button class="seg-btn active" id="wx-random" onclick="setWeather('random')">Random</button>
+          <button class="seg-btn" id="wx-clear"  onclick="setWeather('clear')">Clear</button>
+          <button class="seg-btn" id="wx-rain"   onclick="setWeather('rain')">Rain</button>
+          <button class="seg-btn" id="wx-storm"  onclick="setWeather('storm')">Storm</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Offside Rule</div><div class="setting-sub">Flag CPU attackers offside</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle-track on" id="tog-offside" onclick="toggleSetting('offside',this)"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Injuries</div><div class="setting-sub">Players can get injured</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle-track on" id="tog-injury" onclick="toggleSetting('injury',this)"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Cards</div><div class="setting-sub">Yellow and red cards</div></div>
+        <div class="toggle-wrap">
+          <div class="toggle-track on" id="tog-cards" onclick="toggleSetting('cards',this)"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Camera</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Camera Style</div></div>
+        <div class="setting-control">
+          <button class="seg-btn active" id="cam-broadcast" onclick="setCam('broadcast')">Broadcast</button>
+          <button class="seg-btn" id="cam-high"      onclick="setCam('high')">High</button>
+          <button class="seg-btn" id="cam-close"     onclick="setCam('close')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── CURSOR ─────────────────────────────────────────────────────
+var cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+var mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function loop(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop)})();
+
+// ── SETTINGS STORAGE ───────────────────────────────────────────
+var Settings={
+  sfx:true,crowd:true,offside:true,injury:true,cards:true,
+  difficulty:'medium',matchLen:300,formation:'4-3-3',camStyle:'broadcast'
+};
+function loadSettings(){
+  try{var s=JSON.parse(localStorage.getItem('sfc_settings'));if(s)Object.assign(Settings,s)}catch(e){}
+}
+function saveSettings(){
+  try{localStorage.setItem('sfc_settings',JSON.stringify(Settings))}catch(e){}
+}
+loadSettings();
+
+// ── STATS ──────────────────────────────────────────────────────
+function loadStats(){
+  try{
+    var st=JSON.parse(localStorage.getItem('sfc_matchstats')||'{}');
+    document.getElementById('hs-played').textContent=st.played||0;
+    document.getElementById('hs-wins').textContent=st.wins||0;
+    document.getElementById('hs-goals').textContent=st.goals||0;
+    var bolts=parseInt(localStorage.getItem('sfc_bolts')||'0');
+    document.getElementById('hs-bolts').textContent=bolts.toLocaleString();
+    document.getElementById('nav-bolts').textContent=bolts.toLocaleString();
+  }catch(e){}
+}
+loadStats();
+
+// ── VIEW SWITCHING ─────────────────────────────────────────────
+function showView(v){
+  document.querySelectorAll('.view').forEach(function(el){el.classList.remove('active')});
+  document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active')});
+  var el=document.getElementById('view-'+v);if(el)el.classList.add('active');
+  var tabs={'home':0,'formation':1,'settings':2};
+  var t=document.querySelectorAll('.nav-tab');if(t[tabs[v]])t[tabs[v]].classList.add('active');
+  if(v==='formation')renderPitch();
+}
+
+// ── FORMATIONS DATA ────────────────────────────────────────────
+var FORMS={
+  '4-3-3':{
+    stats:{att:88,mid:72,def:65,wid:85},
+    pos:[
+      {r:'GK',x:50,y:92},{r:'LB',x:18,y:72},{r:'LCB',x:34,y:78},{r:'RCB',x:66,y:78},{r:'RB',x:82,y:72},
+      {r:'LCM',x:28,y:54},{r:'CM',x:50,y:50},{r:'RCM',x:72,y:54},
+      {r:'LW',x:18,y:28},{r:'ST',x:50,y:18},{r:'RW',x:82,y:28}
+    ]
+  },
+  '4-4-2':{
+    stats:{att:75,mid:82,def:72,wid:78},
+    pos:[
+      {r:'GK',x:50,y:92},{r:'LB',x:18,y:72},{r:'LCB',x:34,y:78},{r:'RCB',x:66,y:78},{r:'RB',x:82,y:72},
+      {r:'LM',x:14,y:50},{r:'LCM',x:36,y:52},{r:'RCM',x:64,y:52},{r:'RM',x:86,y:50},
+      {r:'LST',x:36,y:22},{r:'RST',x:64,y:22}
+    ]
+  },
+  '4-2-3-1':{
+    stats:{att:72,mid:90,def:75,wid:70},
+    pos:[
+      {r:'GK',x:50,y:92},{r:'LB',x:18,y:72},{r:'LCB',x:34,y:78},{r:'RCB',x:66,y:78},{r:'RB',x:82,y:72},
+      {r:'LDM',x:36,y:60},{r:'RDM',x:64,y:60},
+      {r:'LW',x:20,y:38},{r:'CAM',x:50,y:36},{r:'RW',x:80,y:38},
+      {r:'ST',x:50,y:18}
+    ]
+  },
+  '3-5-2':{
+    stats:{att:78,mid:85,def:68,wid:92},
+    pos:[
+      {r:'GK',x:50,y:92},{r:'LCB',x:28,y:80},{r:'CB',x:50,y:82},{r:'RCB',x:72,y:80},
+      {r:'LWB',x:10,y:52},{r:'LCM',x:32,y:55},{r:'CM',x:50,y:50},{r:'RCM',x:68,y:55},{r:'RWB',x:90,y:52},
+      {r:'LST',x:36,y:20},{r:'RST',x:64,y:20}
+    ]
+  },
+  '5-3-2':{
+    stats:{att:65,mid:70,def:95,wid:80},
+    pos:[
+      {r:'GK',x:50,y:92},{r:'LWB',x:10,y:68},{r:'LCB',x:28,y:78},{r:'CB',x:50,y:82},{r:'RCB',x:72,y:78},{r:'RWB',x:90,y:68},
+      {r:'LCM',x:28,y:52},{r:'CM',x:50,y:48},{r:'RCM',x:72,y:52},
+      {r:'LST',x:36,y:22},{r:'RST',x:64,y:22}
+    ]
+  },
+  '4-1-4-1':{
+    stats:{att:70,mid:88,def:80,wid:75},
+    pos:[
+      {r:'GK',x:50,y:92},{r:'LB',x:18,y:72},{r:'LCB',x:34,y:78},{r:'RCB',x:66,y:78},{r:'RB',x:82,y:72},
+      {r:'DM',x:50,y:62},
+      {r:'LM',x:14,y:46},{r:'LCM',x:36,y:44},{r:'RCM',x:64,y:44},{r:'RM',x:86,y:46},
+      {r:'ST',x:50,y:18}
+    ]
+  }
+};
+
+var currentForm='4-3-3';
+function selectFormation(f,btn){
+  currentForm=f;Settings.formation=f;saveSettings();
+  document.querySelectorAll('.form-option').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+  renderPitch();updateFormStats();
+}
+
+function renderPitch(){
+  var pd=document.getElementById('pitch-diagram');
+  var f=FORMS[currentForm];
+  if(!f)return;
+  // Clear old players
+  pd.querySelectorAll('.pd-player').forEach(function(e){e.remove()});
+  f.pos.forEach(function(p){
+    var el=document.createElement('div');
+    el.className='pd-player blue'+(p.r==='GK'?' gk':'');
+    el.style.left=p.x+'%';el.style.top=p.y+'%';
+    el.textContent=p.r.length>3?p.r.substring(0,2):p.r;
+    pd.appendChild(el);
+  });
+}
+
+function updateFormStats(){
+  var f=FORMS[currentForm];if(!f)return;
+  var s=f.stats;
+  document.getElementById('fs-att').textContent=s.att;document.getElementById('fb-att').style.width=s.att+'%';
+  document.getElementById('fs-mid').textContent=s.mid;document.getElementById('fb-mid').style.width=s.mid+'%';
+  document.getElementById('fs-def').textContent=s.def;document.getElementById('fb-def').style.width=s.def+'%';
+  document.getElementById('fs-wid').textContent=s.wid;document.getElementById('fb-wid').style.width=s.wid+'%';
+}
+
+function setDiff(d){
+  Settings.difficulty=d;saveSettings();
+  ['easy','med','hard'].forEach(function(x){document.getElementById('diff-'+x).classList.remove('active')});
+  document.getElementById('diff-'+d).classList.add('active');
+}
+function setLen(l){
+  Settings.matchLen=l;saveSettings();
+  ['3','5','10'].forEach(function(x){document.getElementById('len-'+x).classList.remove('active')});
+  var map={180:'3',300:'5',600:'10'};
+  document.getElementById('len-'+map[l]).classList.add('active');
+}
+
+// ── SETTINGS TOGGLES ───────────────────────────────────────────
+function toggleSetting(key,el){
+  Settings[key]=!Settings[key];
+  el.classList.toggle('on',Settings[key]);
+  saveSettings();
+}
+function setWeather(w){
+  Settings.weather=w;saveSettings();
+  ['random','clear','rain','storm'].forEach(function(x){var e=document.getElementById('wx-'+x);if(e)e.classList.remove('active')});
+  var el=document.getElementById('wx-'+w);if(el)el.classList.add('active');
+}
+function setCam(style){
+  Settings.camStyle=style;saveSettings();
+  ['broadcast','high','close'].forEach(function(x){document.getElementById('cam-'+x).classList.remove('active')});
+  document.getElementById('cam-'+style).classList.add('active');
+}
+
+// Apply saved settings to UI
+(function applySettings(){
+  ['sfx','crowd','offside','injury','cards'].forEach(function(k){
+    var el=document.getElementById('tog-'+k);
+    if(el)el.classList.toggle('on',Settings[k]!==false);
+  });
+  var diffMap={'easy':'easy','medium':'med','hard':'hard'};
+  var dd=document.getElementById('diff-'+(diffMap[Settings.difficulty]||'med'));
+  if(dd){document.querySelectorAll('[id^=diff-]').forEach(function(b){b.classList.remove('active')});dd.classList.add('active')}
+  var lenMap={180:'3',300:'5',600:'10'};
+  var ld=document.getElementById('len-'+(lenMap[Settings.matchLen]||'5'));
+  if(ld){document.querySelectorAll('[id^=len-]').forEach(function(b){b.classList.remove('active')});ld.classList.add('active')}
+  var wxMap={'random':'random','clear':'clear','rain':'rain','heavy_rain':'rain','fog':'rain','storm':'storm'};
+  var wxKey=wxMap[Settings.weather||'random']||'random';
+  var wxEl=document.getElementById('wx-'+wxKey);
+  if(wxEl){['random','clear','rain','storm'].forEach(function(x){var e=document.getElementById('wx-'+x);if(e)e.classList.remove('active')});wxEl.classList.add('active')}
+  var cd=document.getElementById('cam-'+(Settings.camStyle||'broadcast'));
+  if(cd){document.querySelectorAll('[id^=cam-]').forEach(function(b){b.classList.remove('active')});cd.classList.add('active')}
+  // Apply saved formation
+  currentForm=Settings.formation||'4-3-3';
+  var fb=document.querySelector('[data-form="'+currentForm+'"]');
+  if(fb){document.querySelectorAll('.form-option').forEach(function(b){b.classList.remove('active')});fb.classList.add('active')}
+})();
+
+renderPitch();updateFormStats();
+
+// ── KICK OFF ───────────────────────────────────────────────────
+function kickOff(){
+  // Save everything then go to game
+  Settings.formation=currentForm;saveSettings();
+  window.location.href='game.html';
+}
+
+// If came from game with ?view=formation, jump straight there
+if(location.search.includes('formation'))showView('formation');
+</script>
+</body>
+</html>
